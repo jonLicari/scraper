@@ -39,7 +39,6 @@ def validate_tables(table, new_df: pd.DataFrame) -> None:
     '''Filter table data row-by-row and save to a new df.'''
     # Find the number of columns in the table
     _, num_columns = table.shape
-    print("# of Columns = ", num_columns)
 
     # Iterate over the raw data table row-by-row and filter data
     for row in table.df.itertuples(index=False):
@@ -54,13 +53,18 @@ def validate_tables(table, new_df: pd.DataFrame) -> None:
             continue
 
         # Ignore the Processing Date, save the description
-        try:
-            column_index = 1
-            pd.to_datetime(row[column_index]+" 2023", format='%b %d %Y')
+        column_index = 1
+        if (row[column_index] == ''):
             column_index = 2
             filtered_row.append(row[column_index])
-        except Exception:
-            filtered_row.append(row[column_index])
+        else:
+            try:
+                pd.to_datetime(row[column_index]+" 2023", format='%b %d %Y')
+                column_index = 2
+                filtered_row.append(row[column_index])
+            except Exception:
+                print("2: ", row)
+                filtered_row.append(row[column_index])
 
         # Validate and save the amount
         column_index = column_index + 1
@@ -68,11 +72,15 @@ def validate_tables(table, new_df: pd.DataFrame) -> None:
             float(row[column_index])
             filtered_row.append((row[column_index]))
         except Exception:
+            print("3: ", row)
             try:
+                if (column_index + 1 >= num_columns):
+                    continue
                 column_index = column_index + 1
                 float(row[column_index])
                 filtered_row.append((row[column_index]))
             except Exception:
+                print("4: ", row)
                 continue
 
         # print(filtered_row)
