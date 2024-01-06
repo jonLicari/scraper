@@ -3,28 +3,29 @@ import os
 import pandas as pd
 from camelot import read_pdf
 
-columns = ['Date', 'Description', 'Amount']
+columns = ["Date", "Description", "Amount"]
 
 
 class FilteredTable(pd.DataFrame):
-    '''Table for holding data filtered from the parsed pdf.'''
+    """Table for holding data filtered from the parsed pdf."""
+
     def __init__(self, columns=None):
         super().__init__(columns=columns)
 
     def assign_row(self, row: list, index: int):
-        '''Assign a new row to the dataframe at the specified index.'''
+        """Assign a new row to the dataframe at the specified index."""
         super().loc[index] = row
 
 
 def parse_data_from_input_file(pdf_path) -> list:
-    '''Read the input file and parse data into tables.'''
+    """Read the input file and parse data into tables."""
     table_list = read_pdf(pdf_path, pages="2,3", flavor="stream")
 
     return table_list
 
 
 def get_input_file_path() -> str:
-    '''Return the filepath for the pdf to be parsed.'''
+    """Return the filepath for the pdf to be parsed."""
     script_dir = os.path.dirname(os.path.abspath(__file__))
     #  TODO handle varying filenames
 
@@ -36,7 +37,7 @@ def get_input_file_path() -> str:
 
 
 def validate_tables(table, new_df: pd.DataFrame) -> None:
-    '''Filter table data row-by-row and save to a new df.'''
+    """Filter table data row-by-row and save to a new df."""
     # Find the number of columns in the table
     _, num_columns = table.shape
 
@@ -48,24 +49,25 @@ def validate_tables(table, new_df: pd.DataFrame) -> None:
         # save transaction date, ignore post date
         try:
             filtered_row.append(
-                pd.to_datetime(row[column_index]+" 2023", format='%b %d %Y'))
+                pd.to_datetime(row[column_index] + " 2023", format="%b %d %Y")
+            )
         except Exception:
             continue
 
         # Ignore the Processing Date, save the description
         column_index = 1
-        if (row[column_index] == ''):
+        if row[column_index] == "":
             column_index = 2
             filtered_row.append(row[column_index])
         else:
             try:
-                pd.to_datetime(row[column_index]+" 2023", format='%b %d %Y')
+                pd.to_datetime(row[column_index] + " 2023", format="%b %d %Y")
                 column_index = 2
-                if ("PAYMENT THANK YOU" in row[column_index]):
+                if "PAYMENT THANK YOU" in row[column_index]:
                     continue
                 filtered_row.append(row[column_index])
             except Exception:
-                if ("PAYMENT THANK YOU" in row[column_index]):
+                if "PAYMENT THANK YOU" in row[column_index]:
                     continue
                 filtered_row.append(row[column_index])
 
@@ -88,7 +90,7 @@ def validate_tables(table, new_df: pd.DataFrame) -> None:
 
 
 def print_to_terminal(table: pd.DataFrame) -> None:
-    '''Print filtered table contents to the terminal.'''
+    """Print filtered table contents to the terminal."""
     print(table)
 
 
