@@ -12,9 +12,13 @@ class FilteredTable(pd.DataFrame):
     def __init__(self, columns=None):
         super().__init__(columns=columns)
 
-    def assign_row(self, row: list, index: int):
+    def assign_row(self, row: list, index: int) -> int:
         """Assign a new row to the dataframe at the specified index."""
-        super().loc[index] = row
+        if index >= 0:
+            super().loc[index] = row
+            return 0
+
+        raise IndexError("Index must not be negative")
 
 
 def parse_data_from_input_file(pdf_path) -> list:
