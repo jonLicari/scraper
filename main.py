@@ -3,7 +3,7 @@ import os
 import pandas as pd
 from camelot import read_pdf
 
-columns = ['Date', 'Name', 'Amount']
+columns = ['Date', 'Description', 'Amount']
 
 
 class FilteredTable(pd.DataFrame):
@@ -35,35 +35,56 @@ def get_input_file_path() -> str:
     )
 
 
-def filter_tables(table) -> pd.DataFrame:
+def validate_tables(table, new_df: pd.DataFrame) -> None:
     '''Filter table data row-by-row and save to a new df.'''
-    # New dataframe to read in filtered data to
-    new_df = FilteredTable(columns=columns)
+    # Find the number of columns in the table
+    _, num_columns = table.shape
 
     # Iterate over the raw data table row-by-row and filter data
     for row in table.df.itertuples(index=False):
         filtered_row = []
+        column_index = 0
 
         # save transaction date, ignore post date
         try:
             filtered_row.append(
-                pd.to_datetime(row[0]+" 2023", format='%b %d %Y'))
-
+                pd.to_datetime(row[column_index]+" 2023", format='%b %d %Y'))
         except Exception:
             continue
 
-        filtered_row.append(row[2])
+        # Ignore the Processing Date, save the description
+        column_index = 1
+        if (row[column_index] == ''):
+            column_index = 2
+            filtered_row.append(row[column_index])
+        else:
+            try:
+                pd.to_datetime(row[column_index]+" 2023", format='%b %d %Y')
+                column_index = 2
+                if ("PAYMENT THANK YOU" in row[column_index]):
+                    continue
+                filtered_row.append(row[column_index])
+            except Exception:
+                if ("PAYMENT THANK YOU" in row[column_index]):
+                    continue
+                filtered_row.append(row[column_index])
 
-        try:
-            filtered_row.append((row[4]))
-        except Exception as error:
-            print(row[4], "failed", error)
+        # Validate and save the amount
+        column_index = column_index + 1
+        error_f = False
+        for i in range(column_index, num_columns):
+            try:
+                float(row[i])
+                filtered_row.append((row[i]))
+                error_f = False
+                break
+            except Exception:
+                error_f = True
+
+        if error_f is True:
             continue
 
-        # print(filtered_row)
         new_df.assign_row(row=filtered_row, index=len(new_df))
-
-    return new_df
 
 
 def print_to_terminal(table: pd.DataFrame) -> None:
@@ -78,14 +99,12 @@ if __name__ == "__main__":
     # Parse the PDF into tables
     tables = parse_data_from_input_file(input_datafile_path)
 
-    # Get the total number of tables
-    table_count = tables.n
+    # New dataframe to read in filtered data to
+    filtered_df = FilteredTable(columns=columns)
 
     # Filter tables
-    for n in range(table_count):
-        print("TABLE", n)
-        print("Size = ", tables[n].shape)
-        filtered_table: pd.DataFrame = filter_tables(tables[n])
+    for n in range(tables.n):
+        validate_tables(tables[n], filtered_df)
 
-        # Print to terminal
-        print_to_terminal(filtered_table)
+    # Print to terminal
+    print_to_terminal(filtered_df)
