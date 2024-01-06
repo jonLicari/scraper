@@ -61,29 +61,29 @@ def validate_tables(table, new_df: pd.DataFrame) -> None:
             try:
                 pd.to_datetime(row[column_index]+" 2023", format='%b %d %Y')
                 column_index = 2
+                if ("PAYMENT THANK YOU" in row[column_index]):
+                    continue
                 filtered_row.append(row[column_index])
             except Exception:
-                print("2: ", row)
+                if ("PAYMENT THANK YOU" in row[column_index]):
+                    continue
                 filtered_row.append(row[column_index])
 
         # Validate and save the amount
         column_index = column_index + 1
-        try:
-            float(row[column_index])
-            filtered_row.append((row[column_index]))
-        except Exception:
-            print("3: ", row)
+        error_f = False
+        for i in range(column_index, num_columns):
             try:
-                if (column_index + 1 >= num_columns):
-                    continue
-                column_index = column_index + 1
-                float(row[column_index])
-                filtered_row.append((row[column_index]))
+                float(row[i])
+                filtered_row.append((row[i]))
+                error_f = False
+                break
             except Exception:
-                print("4: ", row)
-                continue
+                error_f = True
 
-        # print(filtered_row)
+        if error_f is True:
+            continue
+
         new_df.assign_row(row=filtered_row, index=len(new_df))
 
 
